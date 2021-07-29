@@ -36,17 +36,26 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/users
-router.post('/', (req, res) => {
+router.post('/login', (req, res) => {
     // expects {username: 'example', email: 'example@gmail.com', password: 'password1234'}
-    User.create({
-        username: req.body.username,
-        email: req.body.email,
-        password: req.body.password
+    User.findOne({
+        where: {
+          email: req.body.email
+        }
     })
-    .then(dbUserData => res.json(dbUserData))
-    .catch(err => {
-        console.log(err);
-        res.status(500).json(err);
+    .then(dbUserData => {
+      if (!dbUserData) {
+        res.status(400).json({ message: 'No user with that email address!'});
+        return;
+      }
+      
+      // Verify user
+      const validPassword = dbUserData.checkPassword(req.body.password);
+      if (!validPassword) {
+        res.status(400).json({ message: 'Incorrect password!' });
+        return;
+      }
+      res.json({ user: dbUserData, message: 'You are now logged in!' });
     });
 });
 
